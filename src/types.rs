@@ -84,7 +84,7 @@ impl Deref for EntityDescriptorSet {
 #[derive(Debug)]
 pub struct Entity {
 	pub kind: EntityKind,
-	pub descriptorId: Id,
+	pub descriptor_id: Id,
 }
 
 #[derive(Debug)]
