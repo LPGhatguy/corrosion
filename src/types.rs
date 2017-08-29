@@ -8,7 +8,8 @@ pub type Number = i64;
 #[derive(Debug)]
 pub enum PlayZoneKind {
 	Battlefield,
-	Hand(Id)
+	Hand(Id),
+	Library(Id),
 }
 
 #[derive(Debug)]
@@ -150,6 +151,10 @@ pub enum GameEvent {
 	LosePriority,
 	AdvanceStep(PlayStep),
 	AdvanceTurn(Id),
+	AddEntity {
+		zone_id: Id,
+		entity: Entity,
+	},
 }
 
 #[derive(Debug)]
@@ -186,6 +191,7 @@ impl Deref for Players {
 	}
 }
 
+/// Represents the entire game's state.
 #[derive(Debug)]
 pub struct PlayState<'a> {
 	pub descriptor_set: &'a EntityDescriptorSet,
@@ -211,13 +217,37 @@ impl<'a> PlayState<'a> {
 		creating.zones.insert(battlefield_id, PlayZone::new(battlefield_id, PlayZoneKind::Battlefield));
 
 		for player in players.into_iter() {
-			let hand_id = get_id();
-			let hand = PlayZone::new(hand_id, PlayZoneKind::Hand(player.id));
-			creating.zones.insert(hand_id, hand);
+			let hand = PlayZone::new(get_id(), PlayZoneKind::Hand(player.id));
+			creating.zones.insert(hand.id, hand);
+
+			let library = PlayZone::new(get_id(), PlayZoneKind::Library(player.id));
+			creating.zones.insert(library.id, library);
 
 			creating.players.add(player);
 		}
 
 		creating
+	}
+
+	// TODO: method for querying values from state
+	// TODO: cleanup handle_event to separating mutating+querying state
+
+	pub fn handle_event(&mut self, event: GameEvent) {
+		match event {
+			GameEvent::AddEntity { zone_id, entity } => {
+				println!("Add {:?} to zone {:?}", entity, zone_id);
+			},
+			_ => {}
+		}
+	}
+
+	pub fn find_zone_where<T: Fn(Id, &PlayZone) -> bool>(&self, condition: T) -> Option<Id> {
+		for (key, value) in self.zones.iter() {
+			if condition(*key, value) {
+				return Some(*key);
+			}
+		}
+
+		None
 	}
 }
