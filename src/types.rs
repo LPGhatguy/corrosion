@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 pub type Id = usize;
+pub type Number = i64;
 
 #[derive(Debug)]
 pub enum PlayZoneKind {
@@ -16,9 +17,43 @@ pub enum EntityKind {
 }
 
 #[derive(Debug)]
+pub struct ManaCost {
+	pub generic: Number,
+	pub white: Number,
+	pub blue: Number,
+	pub black: Number,
+	pub red: Number,
+	pub green: Number,
+	pub colorless: Number,
+}
+
+impl Default for ManaCost {
+	fn default() -> ManaCost {
+		ManaCost {
+			generic: 0,
+			white: 0,
+			blue: 0,
+			black: 0,
+			red: 0,
+			green: 0,
+			colorless: 0,
+		}
+	}
+}
+
+#[derive(Debug)]
+pub enum Cost {
+	Impossible,
+	Mana(ManaCost),
+}
+
+#[derive(Debug)]
 pub struct EntityDescriptor {
 	pub name: String,
 	pub id: Id,
+
+	// TODO: switch to Vec<Cost>
+	pub cost: Cost,
 }
 
 #[derive(Debug)]
@@ -110,17 +145,44 @@ pub enum PlayStep {
 }
 
 #[derive(Debug)]
-pub enum PlayAction {
+pub enum GameEvent {
 	GainPriority(Id),
-	PassPriority(Id),
-	StartResolution,
+	LosePriority,
+	AdvanceStep(PlayStep),
+	AdvanceTurn(Id),
 }
 
-impl PlayAction {
-	pub fn can_undo(&self) -> bool {
-		match *self {
-			_ => false,
+#[derive(Debug)]
+pub enum PlayAction {
+	PassPriority(Id),
+	Concede(Id),
+}
+
+#[derive(Debug)]
+pub struct Players {
+	pub map: HashMap<Id, Player>,
+	pub turn_order: Vec<Id>,
+}
+
+impl Players {
+	pub fn new() -> Players {
+		Players {
+			map: HashMap::new(),
+			turn_order: Vec::new(),
 		}
+	}
+
+	pub fn add(&mut self, player: Player) {
+		self.turn_order.push(player.id);
+		self.map.insert(player.id, player);
+	}
+}
+
+impl Deref for Players {
+	type Target = HashMap<Id, Player>;
+
+	fn deref(&self) -> &HashMap<Id, Player> {
+		&self.map
 	}
 }
 
@@ -128,8 +190,8 @@ impl PlayAction {
 pub struct PlayState<'a> {
 	pub descriptor_set: &'a EntityDescriptorSet,
 	pub zones: HashMap<Id, PlayZone>,
-	pub players: HashMap<Id, Player>,
-	pub history: Vec<PlayAction>,
+	pub players: Players,
+	pub priority: Option<Id>,
 }
 
 impl<'a> PlayState<'a> {
@@ -137,8 +199,8 @@ impl<'a> PlayState<'a> {
 		PlayState {
 			descriptor_set,
 			zones: HashMap::new(),
-			players: HashMap::new(),
-			history: Vec::new(),
+			players: Players::new(),
+			priority: None,
 		}
 	}
 
@@ -153,24 +215,9 @@ impl<'a> PlayState<'a> {
 			let hand = PlayZone::new(hand_id, PlayZoneKind::Hand(player.id));
 			creating.zones.insert(hand_id, hand);
 
-			creating.players.insert(player.id, player);
+			creating.players.add(player);
 		}
 
 		creating
-	}
-
-	pub fn undo(&mut self) -> bool {
-		match self.history.last() {
-			Some(action) => {
-				if !action.can_undo() {
-					return false;
-				}
-			},
-			None => return false,
-		}
-
-		// TODO: actually perform undo
-
-		return true;
 	}
 }

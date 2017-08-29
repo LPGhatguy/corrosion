@@ -8,11 +8,17 @@ fn main() {
 
 	descriptor_set.add(EntityDescriptor {
 		name: "Grizzly Bears".to_string(),
+		cost: Cost::Mana(ManaCost {
+			generic: 1,
+			green: 1,
+			..Default::default()
+		}),
 		id: get_id(),
 	});
 
 	descriptor_set.add(EntityDescriptor {
 		name: "Forest".to_string(),
+		cost: Cost::Impossible,
 		id: get_id(),
 	});
 
