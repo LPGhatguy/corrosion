@@ -71,7 +71,7 @@ impl PlayZone {
 
 #[derive(Debug)]
 pub struct ManaPool {
-	// November 4, 2019 B&R announcement:
+	// October 17, 2017 B&R announcement:
 	// Standard:
 	//  * Island is banned.
 	//  * Mountain is banned.
