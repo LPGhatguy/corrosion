@@ -12,7 +12,7 @@ pub enum PlayZoneKind {
 	Library(Id),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EntityKind {
 	Card,
 }
@@ -82,10 +82,21 @@ impl Deref for EntityDescriptorSet {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Entity {
 	pub kind: EntityKind,
+	pub id: Id,
 	pub descriptor_id: Id,
+}
+
+impl Entity {
+	pub fn clone_new(&self) -> Self {
+		let mut cloned = self.clone();
+
+		cloned.id = get_id();
+
+		cloned
+	}
 }
 
 #[derive(Debug)]
@@ -143,10 +154,11 @@ impl Player {
 pub enum PlayStep {
 	Untap,
 	Main1,
+	End,
 }
 
 #[derive(Debug)]
-pub enum GameEvent {
+pub enum GameMutation {
 	GainPriority(Id),
 	LosePriority,
 	AdvanceStep(PlayStep),
@@ -155,10 +167,15 @@ pub enum GameEvent {
 		zone_id: Id,
 		entity: Entity,
 	},
+	MoveEntity {
+		current_zone_id: Id,
+		entity_id: Id,
+		new_zone_id: Id,
+	},
 }
 
 #[derive(Debug)]
-pub enum PlayAction {
+pub enum PlayerAction {
 	PassPriority(Id),
 	Concede(Id),
 }
@@ -198,20 +215,24 @@ pub struct PlayState<'a> {
 	pub zones: HashMap<Id, PlayZone>,
 	pub players: Players,
 	pub priority: Option<Id>,
+	pub step: PlayStep,
+	pub turn: Id,
 }
 
 impl<'a> PlayState<'a> {
-	pub fn new(descriptor_set: &EntityDescriptorSet) -> PlayState {
-		PlayState {
+	pub fn new(players: Vec<Player>, descriptor_set: &'a EntityDescriptorSet) -> PlayState<'a> {
+		assert!(!players.is_empty());
+
+		let first_id = players[0].id;
+
+		let mut creating = PlayState {
 			descriptor_set,
 			zones: HashMap::new(),
 			players: Players::new(),
 			priority: None,
-		}
-	}
-
-	pub fn new_default(players: Vec<Player>, descriptor_set: &'a EntityDescriptorSet) -> PlayState<'a> {
-		let mut creating = PlayState::new(descriptor_set);
+			step: PlayStep::Untap,
+			turn: first_id,
+		};
 
 		let battlefield_id = get_id();
 		creating.zones.insert(battlefield_id, PlayZone::new(battlefield_id, PlayZoneKind::Battlefield));
@@ -229,13 +250,69 @@ impl<'a> PlayState<'a> {
 		creating
 	}
 
-	// TODO: method for querying values from state
-	// TODO: cleanup handle_event to separating mutating+querying state
+	pub fn do_action(&mut self, action: PlayerAction) {
 
-	pub fn handle_event(&mut self, event: GameEvent) {
+	}
+
+	pub fn mutate(&mut self, event: GameMutation) {
 		match event {
-			GameEvent::AddEntity { zone_id, entity } => {
-				println!("Add {:?} to zone {:?}", entity, zone_id);
+			GameMutation::AddEntity { zone_id, entity } => {
+				let zone = match self.zones.get_mut(&zone_id) {
+					Some(zone) => zone,
+					None => {
+						println!("Couldn't find zone with ID {}", zone_id);
+						return;
+					}
+				};
+
+				zone.entities.push(entity);
+			},
+			GameMutation::MoveEntity { current_zone_id, entity_id, new_zone_id } => {
+				let entity = {
+					let zone = match self.zones.get_mut(&current_zone_id) {
+						Some(zone) => zone,
+						None => {
+							println!("Couldn't find zone with ID {}", current_zone_id);
+							return;
+						}
+					};
+
+					let entity_index = zone.entities.iter().position(|ref entity| {
+						entity.id == entity_id
+					});
+
+					let entity_index = match entity_index {
+						Some(v) => v,
+						None => {
+							println!("Couldn't find entity {} in zone {}", entity_id, current_zone_id);
+							return;
+						},
+					};
+
+					zone.entities.remove(entity_index).clone_new()
+				};
+
+				let new_zone = match self.zones.get_mut(&new_zone_id) {
+					Some(zone) => zone,
+					None => {
+						println!("Couldn't find zone with ID {}", new_zone_id);
+						return;
+					}
+				};
+
+				new_zone.entities.push(entity);
+			},
+			GameMutation::GainPriority(player_id) => {
+				self.priority = Some(player_id);
+			},
+			GameMutation::LosePriority => {
+				self.priority = None;
+			},
+			GameMutation::AdvanceStep(next_step) => {
+				self.step = next_step;
+			},
+			GameMutation::AdvanceTurn(player_id) => {
+				self.turn = player_id;
 			},
 			_ => {}
 		}

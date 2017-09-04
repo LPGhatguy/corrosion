@@ -7,6 +7,7 @@ fn main() {
 	// Define the card pool for our new format, 'Standard 2018'
 	let mut descriptor_set = EntityDescriptorSet::new();
 
+	let bears_id = get_id();
 	descriptor_set.add(EntityDescriptor {
 		name: "Grizzly Bears".to_string(),
 		cost: Cost::Mana(ManaCost {
@@ -14,7 +15,7 @@ fn main() {
 			green: 1,
 			..Default::default()
 		}),
-		id: get_id(),
+		id: bears_id,
 	});
 
 	let forest_id = get_id();
@@ -33,7 +34,7 @@ fn main() {
 
 	// Build the actual game state.
 	// new_default will construct default zones and add players to the game.
-	let mut state = PlayState::new_default(
+	let mut state = PlayState::new(
 		vec![player1, player2],
 		&descriptor_set
 	);
@@ -55,16 +56,40 @@ fn main() {
 		},
 	};
 
-	// Shove a forest into the user's hand
-	let entity = Entity {
+	// Shove two forests into player1's hand
+	let forest1 = Entity {
 		kind: EntityKind::Card,
+		id: get_id(),
+		descriptor_id: forest_id,
+	};
+
+	let forest2 = Entity {
+		kind: EntityKind::Card,
+		id: get_id(),
 		descriptor_id: forest_id,
 	};
 
 	// Events can be replaced by effects
-	state.handle_event(GameEvent::AddEntity {
+	state.mutate(GameMutation::AddEntity {
 		zone_id: hand_id,
-		entity,
+		entity: forest1,
+	});
+
+	state.mutate(GameMutation::AddEntity {
+		zone_id: hand_id,
+		entity: forest2,
+	});
+
+	// Put a Grizzly Bears into player1's hand
+	let bears = Entity {
+		kind: EntityKind::Card,
+		id: get_id(),
+		descriptor_id: bears_id,
+	};
+
+	state.mutate(GameMutation::AddEntity {
+		zone_id: hand_id,
+		entity: bears,
 	});
 
 	println!("{:?}", state);
