@@ -22,7 +22,7 @@ pub struct Zone {
 impl Zone {
     /// Create a version of the zone that contains only information that the
     /// given player would have.
-    pub fn view_as_player(&self, player_id: Id) -> Zone {
+    pub fn view_as_player(&self, _player_id: Id) -> Zone {
         // In the future, more information might be needed about the player to
         // correctly view a zone from their perspective.
 
