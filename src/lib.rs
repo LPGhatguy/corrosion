@@ -6,14 +6,16 @@ extern crate lazy_static;
 // extern crate serde;
 // extern crate serde_json;
 
-mod id;
-mod player;
-mod play_state;
-mod zone;
 mod entity;
+mod id;
+mod play_state;
+mod player;
+mod timestamp;
+mod zone;
 
-pub use id::*;
-pub use player::*;
-pub use play_state::*;
-pub use zone::*;
 pub use entity::*;
+pub use id::*;
+pub use play_state::*;
+pub use player::*;
+pub use timestamp::*;
+pub use zone::*;
