@@ -14,10 +14,9 @@ pub fn get_timestamp() -> Timestamp {
 }
 
 #[test]
-fn it_gives_unique_numbers() {
+fn it_gives_increasing_numbers() {
     let a = get_timestamp();
     let b = get_timestamp();
 
-    assert!(a != b);
     assert!(b > a);
 }
