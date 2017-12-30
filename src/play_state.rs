@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use id::{Id, get_id};
-use zone::{Zone, ZoneKind};
+use id::Id;
+use zone::Zone;
 use entity::Entity;
 use player::Player;
 
@@ -18,8 +18,11 @@ pub enum GamePhase {
 #[derive(Debug, Clone)]
 pub struct PlayState {
     pub zones: HashMap<Id, Zone>,
-    pub entities: HashMap<Id, Entity>,
     pub players: HashMap<Id, Player>,
+
+    /// The base definition of each entity in the game, before being modified by
+    /// the currently active effects.
+    pub entities: HashMap<Id, Entity>,
 
     /// The player whose turn it is right now.
     ///
@@ -40,68 +43,55 @@ pub struct PlayState {
     // in this format.
 
     // TODO: Player turn order, probably Vec<Id>
+
+    // TODO: The stack, a Vec<Entity>?
 }
 
 impl PlayState {
-    /// A test method for quickly bootstrapping a valid `PlayState`.
-    ///
-    /// In the future, this will be replaced with a game descriptor struct of
-    /// some sort that describes the format of a game.
-    pub fn default() -> PlayState {
-        let mut state = PlayState {
-            zones: HashMap::new(),
-            entities: HashMap::new(),
-            players: HashMap::new(),
-            current_phase: GamePhase::Main,
+    /// Create a version of `PlayState` as viewed by the given player. This
+    /// should collapse hidden zones and unknown information. Hopefully, it's
+    /// also cheap, since the most naive way to implement client communication
+    /// would be to send a full state on every change!
+    pub fn view_as_player(&self, _player_id: Id) -> PlayState {
+        // TODO: Hide entities that player has no knowledge of, like face-down
+        // permanents.
 
-            // We'll mutate these before we return
-            active_player: None,
-            player_priority: None,
-        };
+        // TODO: Hide zones that player has no knowledge of, like libraries, and
+        // face-down exile zones created by cards like Bomat Courier.
 
-        let battlefield = Zone {
-            id: get_id(),
-            kind: ZoneKind::Battlefield,
-        };
-        state.zones.insert(battlefield.id, battlefield);
-
-        let player1 = Player {
-            id: get_id(),
-        };
-        state.active_player = Some(player1.id);
-        state.player_priority = Some(player1.id);
-
-        let player1_hand = Zone {
-            id: get_id(),
-            kind: ZoneKind::Hand {
-                player_id: player1.id,
-            },
-        };
-        state.players.insert(player1.id, player1);
-        state.zones.insert(player1_hand.id, player1_hand);
-
-        let player2 = Player {
-            id: get_id(),
-        };
-
-        let player2_hand = Zone {
-            id: get_id(),
-            kind: ZoneKind::Hand {
-                player_id: player2.id,
-            },
-        };
-        state.players.insert(player2.id, player2);
-        state.zones.insert(player2_hand.id, player2_hand);
-
-        state
+        self.clone()
     }
 
-    /// Create a version of `PlayState` as viewed by the given player.
-    /// This should collapse hidden zones and unknown information.
-    /// Hopefully, it's also cheap, since the most naive way to implement client
-    /// communication would be to send a full state on every change!
-    pub fn view_as_player(&self, _player_id: Id) -> PlayState {
-        // TODO
-        self.clone()
+    /// Queries an entity in the game by ID.
+    ///
+    /// Entity representation may be unintuitive -- the `Entity` objects stored
+    /// in the `PlayState` only contain their base state. When querying an
+    /// entity's current state, we need to traverse a list of effects currently
+    /// modifying that object in layer order.
+    ///
+    /// As an example, consider a Mountain enchanted by Spreading Seas:
+    ///
+    /// The definition of Mountain says that it has type `Basic Land - Mountain`
+    /// and thus has `{T}: Add {R} to your mana pool`.
+    ///
+    /// Spreading Seas, when on the battlefield, has a replacement effect for
+    /// that removes its target's abilities and changes its type line to `Basic
+    /// Land - Island`.
+    ///
+    /// The mountain's current state (post-effect) thus says that it has type
+    /// `Basic Land - Island` and taps for blue mana only!
+    ///
+    /// If we wanted to return the Mountain entity directly, we'd either have to
+    /// modify the data whenever an effect enters/leaves the battlefield or just
+    /// keep a list of active effects and calculate them on each observation.
+    ///
+    /// While the former technique is possible, I think that calculating effects
+    /// on each individual observation event is simpler.
+    pub fn view_entity(&self, entity_id: Id) -> Option<Entity> {
+        let base_entity = self.entities.get(&entity_id)?;
+
+        // TODO: Enumerate the set of effects that could affect this entity.
+
+        Some(base_entity.clone())
     }
 }

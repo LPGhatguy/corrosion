@@ -1,5 +1,5 @@
 # Stormtide Corrosion
-This is an attempt to implement a Magic rules engine in Rust.
+This is an attempt to implement a *Magic* rules engine in Rust.
 
 This repository just contains the core rules engine and a small program to bootstrap tests. It won't contain a UI
 

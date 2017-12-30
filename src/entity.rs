@@ -1,21 +1,6 @@
 use id::Id;
 use timestamp::Timestamp;
 
-/// Represents the various kinds of entity that exist in the game rules.
-///
-/// I'm not sure if this is sufficient! I think all of the variants of this enum
-/// will probably need associated data, like a card/ability descriptor ID.
-#[derive(Debug, Clone)]
-pub enum EntityKind {
-    /// Any entity backed by a unique card
-    Card,
-    Token,
-    Emblem,
-    Ability,
-
-    // TODO: Represent copy of another entity without Box or recursive types?
-}
-
 /// Describes an entity that exists anywhere in the game.
 ///
 /// The game dictates that when entities move to different zones, they actually
@@ -38,6 +23,8 @@ pub enum EntityKind {
 pub struct Entity {
     pub id: Id,
     pub zone: Id,
+
+    /// A monotonically-increasing value describing when the entity entered the
+    /// zone.
     pub timestamp: Timestamp,
-    pub kind: EntityKind,
 }
