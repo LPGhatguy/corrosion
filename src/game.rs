@@ -16,7 +16,7 @@ pub enum GamePhase {
 
 /// Represents all of the important serializable information about a game.
 #[derive(Debug, Clone)]
-pub struct PlayState {
+pub struct Game {
     pub zones: HashMap<Id, Zone>,
     pub players: HashMap<Id, Player>,
 
@@ -27,7 +27,7 @@ pub struct PlayState {
     /// The player whose turn it is right now.
     ///
     /// I'm not sure if there's a game state in which there is no active player,
-    /// but it simplifies initialization of `PlayState`!
+    /// but it simplifies initialization of `Game`!
     pub active_player: Option<Id>,
 
     /// The player who currently has priority.
@@ -47,12 +47,12 @@ pub struct PlayState {
     // TODO: The stack, a Vec<Entity>?
 }
 
-impl PlayState {
-    /// Create a version of `PlayState` as viewed by the given player. This
+impl Game {
+    /// Create a version of `Game` as viewed by the given player. This
     /// should collapse hidden zones and unknown information. Hopefully, it's
     /// also cheap, since the most naive way to implement client communication
     /// would be to send a full state on every change!
-    pub fn view_as_player(&self, _player_id: Id) -> PlayState {
+    pub fn view_as_player(&self, _player_id: Id) -> Game {
         // TODO: Hide entities that player has no knowledge of, like face-down
         // permanents.
 
@@ -65,7 +65,7 @@ impl PlayState {
     /// Queries an entity in the game by ID.
     ///
     /// Entity representation may be unintuitive -- the `Entity` objects stored
-    /// in the `PlayState` only contain their base state. When querying an
+    /// in the `Game` only contain their base state. When querying an
     /// entity's current state, we need to traverse a list of effects currently
     /// modifying that object in layer order.
     ///

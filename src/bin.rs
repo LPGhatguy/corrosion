@@ -6,7 +6,7 @@ use corrosion::{
     Entity,
     GamePhase,
     Player,
-    PlayState,
+    Game,
     Zone,
     ZoneKind,
 };
@@ -16,9 +16,9 @@ use corrosion::{
     get_timestamp,
 };
 
-/// A test method for quickly bootstrapping a valid `PlayState`.
-fn new_play_state() -> PlayState {
-    let mut state = PlayState {
+/// A test method for quickly bootstrapping a valid `Game`.
+fn new_game() -> Game {
+    let mut state = Game {
         zones: HashMap::new(),
         entities: HashMap::new(),
         players: HashMap::new(),
@@ -76,7 +76,7 @@ fn new_play_state() -> PlayState {
 }
 
 fn main() {
-    let state = new_play_state();
+    let state = new_game();
 
     println!("{:?}", state);
 }
