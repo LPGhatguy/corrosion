@@ -197,6 +197,11 @@ impl Game {
         }
     }
 
+    /// Apply all state-based actions, like creatures dying due to damage.
+    pub fn process_state_based_actions(&mut self) {
+        // TODO: State based actions!
+    }
+
     /// Finds the zone that passes the given condition, if it exists.
     pub fn find_zone_id<F>(&self, predicate: F) -> Option<Id>
     where
@@ -206,6 +211,7 @@ impl Game {
             .find(|zone| predicate(zone))
             .and_then(|zone| Some(zone.id))
     }
+
 
     /// Create a version of `Game` as viewed by the given player. This
     /// should collapse hidden zones and unknown information. Hopefully, it's
