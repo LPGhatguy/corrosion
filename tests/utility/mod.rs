@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use corrosion::{
-    Entity,
     Game,
     GameStatus,
     GamePhase,
@@ -12,7 +11,6 @@ use corrosion::{
 
 use corrosion::{
     get_id,
-    get_timestamp,
 };
 
 /// A test method for quickly bootstrapping a valid two-player `Game`.
@@ -48,14 +46,6 @@ pub fn new_two_player_game() -> Game {
             player_id: player1.id,
         },
     };
-
-    let in_player1_hand = Entity {
-        id: get_id(),
-        zone: player1_hand.id,
-        timestamp: get_timestamp(),
-    };
-
-    game.entities.insert(in_player1_hand.id, in_player1_hand);
 
     game.player_turn_order.push(player1.id);
     game.players.insert(player1.id, player1);
