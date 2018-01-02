@@ -4,7 +4,7 @@ use entity::{Entity, EntityDetails};
 use id::{Id, get_id};
 use player::Player;
 use timestamp::get_timestamp;
-use zone::{Zone, ZoneKind};
+use zone::{Zone, ZoneDetails};
 
 /// Represents the game's current phase
 #[derive(Debug, Clone, PartialEq)]
@@ -92,6 +92,8 @@ pub struct Game {
 impl Game {
     /// Process the given player action.
     pub fn do_player_action(&mut self, acting_player_id: Id, action: &PlayerAction) {
+        // TODO: Some sort of player action result to denote success/failure
+
         // We're busy, no players can act right now!
         if self.current_status == GameStatus::Processing {
             return;
@@ -146,8 +148,8 @@ impl Game {
 
                 let player_hand_id = self
                     .find_zone_id(|zone| {
-                        match zone.kind {
-                            ZoneKind::Hand { player_id } => player_id == acting_player_id,
+                        match zone.details {
+                            ZoneDetails::Hand { player_id } => player_id == acting_player_id,
                             _ => false,
                         }
                     })
@@ -155,8 +157,8 @@ impl Game {
 
                 let battlefield_id = self
                     .find_zone_id(|zone| {
-                        match zone.kind {
-                            ZoneKind::Battlefield => true,
+                        match zone.details {
+                            ZoneDetails::Battlefield => true,
                             _ => false,
                         }
                     })

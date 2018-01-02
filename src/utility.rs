@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use game::{Game, GamePhase, GameStatus};
 use id::{Id, get_id};
 use player::Player;
-use zone::{Zone, ZoneKind};
+use zone::{Zone, ZoneDetails};
 
 /// A test method for quickly bootstrapping a valid two-player `Game`.
 pub fn new_two_player_game() -> Game {
@@ -24,7 +24,7 @@ pub fn new_two_player_game() -> Game {
 
     let battlefield = Zone {
         id: get_id(),
-        kind: ZoneKind::Battlefield,
+        details: ZoneDetails::Battlefield,
     };
     game.zones.insert(battlefield.id, battlefield);
 
@@ -36,7 +36,7 @@ pub fn new_two_player_game() -> Game {
 
     let player1_hand = Zone {
         id: get_id(),
-        kind: ZoneKind::Hand {
+        details: ZoneDetails::Hand {
             player_id: player1.id,
         },
     };
@@ -51,7 +51,7 @@ pub fn new_two_player_game() -> Game {
 
     let player2_hand = Zone {
         id: get_id(),
-        kind: ZoneKind::Hand {
+        details: ZoneDetails::Hand {
             player_id: player2.id,
         },
     };
@@ -65,8 +65,8 @@ pub fn new_two_player_game() -> Game {
 
 pub fn get_hand_id(game: &Game, target_player_id: Id) -> Id {
     game.find_zone_id(|zone| {
-            match zone.kind {
-                ZoneKind::Hand { player_id } => player_id == target_player_id,
+            match zone.details {
+                ZoneDetails::Hand { player_id } => player_id == target_player_id,
                 _ => false,
             }
         })
@@ -75,8 +75,8 @@ pub fn get_hand_id(game: &Game, target_player_id: Id) -> Id {
 
 pub fn get_battlefield_id(game: &Game) -> Id {
     game.find_zone_id(|zone| {
-            match zone.kind {
-                ZoneKind::Battlefield => true,
+            match zone.details {
+                ZoneDetails::Battlefield => true,
                 _ => false,
             }
         })
