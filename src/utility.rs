@@ -1,17 +1,11 @@
+/// These utilities are intended for use by the test suite.
+
 use std::collections::HashMap;
 
-use corrosion::{
-    Game,
-    GameStatus,
-    GamePhase,
-    Player,
-    Zone,
-    ZoneKind,
-};
-
-use corrosion::{
-    get_id,
-};
+use game::{Game, GamePhase, GameStatus};
+use id::{Id, get_id};
+use player::Player;
+use zone::{Zone, ZoneKind};
 
 /// A test method for quickly bootstrapping a valid two-player `Game`.
 pub fn new_two_player_game() -> Game {
@@ -67,4 +61,24 @@ pub fn new_two_player_game() -> Game {
     game.zones.insert(player2_hand.id, player2_hand);
 
     game
+}
+
+pub fn get_hand_id(game: &Game, target_player_id: Id) -> Id {
+    game.find_zone_id(|zone| {
+            match zone.kind {
+                ZoneKind::Hand { player_id } => player_id == target_player_id,
+                _ => false,
+            }
+        })
+        .unwrap()
+}
+
+pub fn get_battlefield_id(game: &Game) -> Id {
+    game.find_zone_id(|zone| {
+            match zone.kind {
+                ZoneKind::Battlefield => true,
+                _ => false,
+            }
+        })
+        .unwrap()
 }

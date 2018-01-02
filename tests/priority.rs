@@ -2,13 +2,13 @@ extern crate corrosion;
 
 use corrosion::PlayerAction;
 
-mod utility;
+use corrosion::utility::*;
 
 /// Tests passing of priority and turn cycling. Currently assumes only one
 /// phase.
 #[test]
 fn test_priority() {
-    let mut game = utility::new_two_player_game();
+    let mut game = new_two_player_game();
 
     let player1_id = game.player_turn_order[0];
     let player2_id = game.player_turn_order[1];

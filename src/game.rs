@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
-use id::Id;
-use zone::Zone;
-use entity::Entity;
+use entity::{Entity, EntityDetails};
+use id::{Id, get_id};
 use player::Player;
+use timestamp::get_timestamp;
+use zone::{Zone, ZoneKind};
 
 /// Represents the game's current phase
 #[derive(Debug, Clone, PartialEq)]
@@ -21,11 +22,25 @@ pub enum GameStatus {
     // TODO: GameEnded? Need to represent win/draw and potentially error
 }
 
+/// Defines all of the actions that a player can take when they have
 #[derive(Debug, Clone)]
 pub enum PlayerAction {
     PassPriority,
+    PlayLand {
+        entity_id: Id,
+    },
 
     // TODO: Other possible player actions
+
+    // Some potentially interesting actions:
+    // * Concede (doesn't need priority)
+    // * Flip a morph card (doesn't need priority)
+}
+
+/// Will be used to define mutations to the game state. Mutations are defined as
+/// objects so that effects can respond to and replace them.
+#[derive(Debug, Clone)]
+pub enum GameMutation {
 }
 
 /// Represents all of the important serializable information about a game.
@@ -34,6 +49,9 @@ pub enum PlayerAction {
 /// * `GameStatus::Processing` -- the game is currently processing
 /// * `GameStatus::NeedsPlayerAction` -- the game requires a response from the
 ///   player who has priority, defined by `priority_player`.
+///
+/// All mutation to the game will come from `PlayerAction` and `GameMutation`
+/// objects, which will be filtered by effects created by the game's rules.
 #[derive(Debug, Clone)]
 pub struct Game {
     pub zones: HashMap<Id, Zone>,
@@ -68,20 +86,21 @@ pub struct Game {
     //       in this format.
     // TODO: The stack, a Vec<Entity>?
     // TODO: A log of player actions
+    // TODO: A list of currently active effects and their durations
 }
 
 impl Game {
     /// Process the given player action.
-    pub fn do_player_action(&mut self, player_id: Id, action: &PlayerAction) {
+    pub fn do_player_action(&mut self, acting_player_id: Id, action: &PlayerAction) {
         // We're busy, no players can act right now!
         if self.current_status == GameStatus::Processing {
             return;
         }
 
-        // Players can only act when they have priority
+        // Players can only act (right now) when they have priority
         match self.priority_player {
             Some(priority_id) => {
-                if player_id != priority_id {
+                if acting_player_id != priority_id {
                     return;
                 }
             },
@@ -94,7 +113,7 @@ impl Game {
             PlayerAction::PassPriority => {
                 let current_priority_index = self.player_turn_order
                     .iter()
-                    .position(|&id| id == player_id)
+                    .position(|&id| id == acting_player_id)
                     .expect("Player with priority is missing from player_turn_order!");
 
                 let current_active_id = self.active_player.unwrap();
@@ -120,7 +139,72 @@ impl Game {
                     self.priority_player = Some(next_priority_id);
                 }
             },
+            PlayerAction::PlayLand { entity_id } => {
+                // TODO: Players can only play lands when it's their turn
+                // TODO: Players can only play lands during a main phase
+                // TODO: Players can only play lands when the stack is empty
+
+                let player_hand_id = self
+                    .find_zone_id(|zone| {
+                        match zone.kind {
+                            ZoneKind::Hand { player_id } => player_id == acting_player_id,
+                            _ => false,
+                        }
+                    })
+                    .expect("Unable to locate player's hand!");
+
+                let battlefield_id = self
+                    .find_zone_id(|zone| {
+                        match zone.kind {
+                            ZoneKind::Battlefield => true,
+                            _ => false,
+                        }
+                    })
+                    .expect("Unable to locate battlefield!");
+
+                // We need to make sure we have a land to play!
+                match self.entities.get(&entity_id) {
+                    Some(entity) => {
+                        // Make sure it's in our player's hand
+                        if entity.zone != player_hand_id {
+                            return;
+                        }
+
+                        // Make sure it's a land
+                        match entity.details {
+                            EntityDetails::Forest => {},
+                            // TODO: Other entity details, when they're introduced
+                        }
+                    }
+                    None => return,
+                }
+
+                // We just checked to make sure this existed above!
+                let entity = self.entities.remove(&entity_id).unwrap();
+
+                // For now, let's just generate a new entity and put it on the
+                // battlefield.
+                let new_entity = Entity {
+                    id: get_id(),
+                    zone: battlefield_id,
+                    timestamp: get_timestamp(),
+                    details: entity.details,
+                };
+
+                // TODO: Use GameMutation instead?
+                self.entities.insert(new_entity.id, new_entity);
+            },
         }
+    }
+
+    /// Finds the zone that passes the given condition, if it exists.
+    pub fn find_zone_id<F>(&self, predicate: F) -> Option<Id>
+    where
+        F: Fn(&Zone) -> bool
+    {
+        self.zones.values()
+            .find(|zone| predicate(zone))
+            .and_then(|zone| Some(zone.id))
     }
 
     /// Create a version of `Game` as viewed by the given player. This

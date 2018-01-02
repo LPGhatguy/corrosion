@@ -1,6 +1,15 @@
 use id::Id;
 use timestamp::Timestamp;
 
+/// Temporary structure to encode entity details.
+///
+/// I'm still thinking about how entities should be structured, but I want to
+/// tinker with other pieces of the codebase.
+#[derive(Debug, Clone)]
+pub enum EntityDetails {
+    Forest,
+}
+
 /// Describes an entity that exists anywhere in the game.
 ///
 /// The game dictates that when entities move to different zones, they actually
@@ -27,4 +36,10 @@ pub struct Entity {
     /// A monotonically-increasing value describing when the entity entered the
     /// zone.
     pub timestamp: Timestamp,
+
+    /// Temporary field denoting entity details
+    pub details: EntityDetails,
+
+    // TODO: Owner, a player ID
+    // TODO: Controller, a player ID
 }
