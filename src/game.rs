@@ -9,14 +9,26 @@ use zone::{Zone, ZoneDetails};
 /// Represents the game's current phase
 #[derive(Debug, Clone, PartialEq)]
 pub enum GamePhase {
+    Untap,
     Main,
 
     // TODO: Other game phases
 }
 
+impl GamePhase {
+    /// Find the next phase for the game, if there is one.
+    ///
+    /// Returning `None` signifies that the turn should advance.
+    pub fn next(&self) -> Option<GamePhase> {
+        match *self {
+            GamePhase::Untap => Some(GamePhase::Main),
+            GamePhase::Main => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum GameStatus {
-    Processing,
     NeedsPlayerAction,
 
     // TODO: GameEnded? Need to represent win/draw and potentially error
@@ -35,6 +47,15 @@ pub enum PlayerAction {
     // Some potentially interesting actions:
     // * Concede (doesn't need priority)
     // * Flip a morph card (doesn't need priority)
+}
+
+/// Defines all of the issues we can run into when performing a player action
+#[derive(Debug, Clone)]
+pub enum PlayerActionError {
+    /// Denotes anything that a player isn't allowed to do.
+    ///
+    /// TODO: Break this into more variants as needed
+    NotAllowed,
 }
 
 /// Will be used to define mutations to the game state. Mutations are defined as
@@ -91,22 +112,18 @@ pub struct Game {
 
 impl Game {
     /// Process the given player action.
-    pub fn do_player_action(&mut self, acting_player_id: Id, action: &PlayerAction) {
-        // TODO: Some sort of player action result to denote success/failure
-
-        // We're busy, no players can act right now!
-        if self.current_status == GameStatus::Processing {
-            return;
-        }
-
+    pub fn do_player_action(&mut self, acting_player_id: Id, action: &PlayerAction) -> Result<(), PlayerActionError> {
         // Players can only act (right now) when they have priority
+        //
+        // TODO: Move this further down, since some actions don't require
+        // priority.
         match self.priority_player {
             Some(priority_id) => {
                 if acting_player_id != priority_id {
-                    return;
+                    return Err(PlayerActionError::NotAllowed);
                 }
             },
-            None => return,
+            None => return Err(PlayerActionError::NotAllowed),
         }
 
         // We'll break the actual action handling into a private routine
@@ -130,16 +147,31 @@ impl Game {
                 let next_priority_id = self.player_turn_order[next_priority_index];
 
                 // If priority would swing back around to the active player,
-                // it's time to advance the turn cycle.
+                // it's time to advance!
                 if next_priority_id == current_active_id {
-                    let next_active_index = (current_active_index + 1) % player_count;
-                    let next_active_id = self.player_turn_order[next_active_index];
+                    // TODO: Pop one item off the stack if not empty
 
-                    self.active_player = Some(next_active_id);
-                    self.priority_player = Some(next_active_id);
+                    // Are we at the end of the turn?
+                    match self.current_phase.next() {
+                        Some(next_phase) => {
+                            // To the next phase!
+                            self.current_phase = next_phase;
+                            self.priority_player = self.active_player;
+                        },
+                        None => {
+                            // We're out of phases, advance turns!
+                            let next_active_index = (current_active_index + 1) % player_count;
+                            let next_active_id = self.player_turn_order[next_active_index];
+
+                            self.active_player = Some(next_active_id);
+                            self.priority_player = Some(next_active_id);
+                        },
+                    }
                 } else {
                     self.priority_player = Some(next_priority_id);
                 }
+
+                Ok(())
             },
             PlayerAction::PlayLand { entity_id } => {
                 // TODO: Players can only play lands when it's their turn
@@ -169,7 +201,7 @@ impl Game {
                     Some(entity) => {
                         // Make sure it's in our player's hand
                         if entity.zone != player_hand_id {
-                            return;
+                            return Err(PlayerActionError::NotAllowed);
                         }
 
                         // Make sure it's a land
@@ -178,7 +210,7 @@ impl Game {
                             // TODO: Other entity details, when they're introduced
                         }
                     }
-                    None => return,
+                    None => return Err(PlayerActionError::NotAllowed),
                 }
 
                 // We just checked to make sure this existed above!
@@ -195,6 +227,8 @@ impl Game {
 
                 // TODO: Use GameMutation instead?
                 self.entities.insert(new_entity.id, new_entity);
+
+                Ok(())
             },
         }
     }

@@ -43,7 +43,7 @@ fn test_success() {
 
     game.do_player_action(player1_id, &PlayerAction::PlayLand {
         entity_id: forest_id,
-    });
+    }).unwrap();
 
     // Entities change identity when they change zones
     assert!(game.entities.get(&forest_id).is_none());
@@ -60,9 +60,11 @@ fn test_fail_wrong_player() {
 
     let player2_id = game.player_turn_order[1];
 
-    game.do_player_action(player2_id, &PlayerAction::PlayLand {
+    let result = game.do_player_action(player2_id, &PlayerAction::PlayLand {
         entity_id: forest_id,
     });
+
+    assert!(result.is_err());
 
     // The entity didn't move!
     assert!(game.entities.get(&forest_id).is_some());
