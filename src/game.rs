@@ -85,6 +85,10 @@ pub struct Game {
     /// the currently active effects.
     pub entities: HashMap<Id, Entity>,
 
+    /// A simple representation of mana pools: the amount of green mana each
+    /// player has. This will need to be expanded!
+    pub mana_pools: HashMap<Id, usize>,
+
     /// The order that players have their turns in.
     pub player_turn_order: Vec<Id>,
 
@@ -175,6 +179,8 @@ impl Game {
                             // To the next phase!
                             self.current_phase = next_phase;
                             self.priority_player = self.active_player;
+
+                            // TODO: Empty mana pools of all players
                         },
                         None => {
                             // We're out of phases, advance turns!
@@ -243,6 +249,7 @@ impl Game {
                     zone: battlefield_id,
                     timestamp: get_timestamp(),
                     details: entity.details,
+                    abilities: entity.abilities,
                 };
 
                 // TODO: Use GameMutation instead?

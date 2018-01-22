@@ -5,6 +5,7 @@ use corrosion::{PlayerAction, GameStatus};
 use corrosion::utility::*;
 
 /// Tests conceding.
+#[test]
 fn test_concede() {
     let mut game = new_two_player_game();
 

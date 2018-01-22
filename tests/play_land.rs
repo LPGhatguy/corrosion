@@ -26,6 +26,7 @@ fn setup() -> (Game, Id) {
         zone: hand_id,
         timestamp: get_timestamp(),
         details: EntityDetails::Forest,
+        abilities: Vec::new(),
     };
     game.entities.insert(forest_id, forest);
 

@@ -10,6 +10,14 @@ pub enum EntityDetails {
     Forest,
 }
 
+/// A super simplified view of abilities; this will need to be separated into
+/// mana abilities and not, represent priority, and actually represent
+/// descriptors of what these abilities do.
+#[derive(Debug, Clone)]
+pub enum Ability {
+    AddGreen,
+}
+
 /// Describes an entity that exists anywhere in the game.
 ///
 /// The game dictates that when entities move to different zones, they actually
@@ -39,6 +47,9 @@ pub struct Entity {
 
     /// Temporary field denoting entity details
     pub details: EntityDetails,
+
+    /// All of the abilities that this entity has available to activate
+    pub abilities: Vec<Ability>,
 
     // TODO: Owner, a player ID
     // TODO: Controller, a player ID
