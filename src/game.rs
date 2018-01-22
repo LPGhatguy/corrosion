@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use entity::{Entity, EntityDetails};
+use entity::{Ability, Entity, EntityDetails};
 use id::{Id, get_id};
 use player::Player;
 use timestamp::get_timestamp;
@@ -44,6 +44,10 @@ pub enum PlayerAction {
     PassPriority,
     PlayLand {
         entity_id: Id,
+    },
+    ActivateAbility {
+        entity_id: Id,
+        ability_id: Id,
     },
 
     // TODO: Other possible player actions
@@ -254,6 +258,42 @@ impl Game {
 
                 // TODO: Use GameMutation instead?
                 self.entities.insert(new_entity.id, new_entity);
+
+                Ok(())
+            },
+            PlayerAction::ActivateAbility { entity_id, ability_id } => {
+                // TODO: This function is definitely temporary, like the rest of
+                //       the ability system.
+
+                self.check_priority(acting_player_id)?;
+
+                let entity = match self.entities.get(&entity_id) {
+                    Some(entity) => entity,
+                    None => return Err(PlayerActionError::NotAllowed),
+                };
+
+                // TODO: Make sure the acting player controls this entity!
+
+                let ability = match entity.abilities.get(&ability_id) {
+                    Some(ability) => ability,
+                    None => return Err(PlayerActionError::NotAllowed),
+                };
+
+                // TODO: Make sure we can pay this cost, perhaps prompt player!
+
+                //  such green
+                //       so forest
+                //    wow
+                match *ability {
+                    Ability::AddGreen => {
+                        // TODO: Tap this land as a cost
+
+                        let mana_value = *self.mana_pools.get(&acting_player_id)
+                            .expect("Player was missing their mana pool!");
+
+                        self.mana_pools.insert(acting_player_id, mana_value + 1);
+                    },
+                }
 
                 Ok(())
             },

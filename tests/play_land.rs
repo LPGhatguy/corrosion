@@ -1,5 +1,7 @@
 extern crate corrosion;
 
+use std::collections::HashMap;
+
 use corrosion::{
     Entity,
     EntityDetails,
@@ -26,7 +28,7 @@ fn setup() -> (Game, Id) {
         zone: hand_id,
         timestamp: get_timestamp(),
         details: EntityDetails::Forest,
-        abilities: Vec::new(),
+        abilities: HashMap::new(),
     };
     game.entities.insert(forest_id, forest);
 

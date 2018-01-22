@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use id::Id;
 use timestamp::Timestamp;
 
@@ -49,7 +51,7 @@ pub struct Entity {
     pub details: EntityDetails,
 
     /// All of the abilities that this entity has available to activate
-    pub abilities: Vec<Ability>,
+    pub abilities: HashMap<Id, Ability>,
 
     // TODO: Owner, a player ID
     // TODO: Controller, a player ID
