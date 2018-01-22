@@ -31,12 +31,16 @@ impl GamePhase {
 pub enum GameStatus {
     NeedsPlayerAction,
 
-    // TODO: GameEnded? Need to represent win/draw and potentially error
+    // TODO: Represent winners and potential draw
+    Ended,
+
+    // TODO: Represent unrecoverable internal error?
 }
 
 /// Defines all of the actions that a player can take when they have
 #[derive(Debug, Clone)]
 pub enum PlayerAction {
+    Concede,
     PassPriority,
     PlayLand {
         entity_id: Id,
@@ -45,7 +49,6 @@ pub enum PlayerAction {
     // TODO: Other possible player actions
 
     // Some potentially interesting actions:
-    // * Concede (doesn't need priority)
     // * Flip a morph card (doesn't need priority)
 }
 
@@ -111,25 +114,40 @@ pub struct Game {
 }
 
 impl Game {
-    /// Process the given player action.
-    pub fn do_player_action(&mut self, acting_player_id: Id, action: &PlayerAction) -> Result<(), PlayerActionError> {
-        // Players can only act (right now) when they have priority
-        //
-        // TODO: Move this further down, since some actions don't require
-        // priority.
+    /// Checks that the given player has priority, and returns the appropriate
+    /// `PlayerActionError` if they do not.
+    fn check_priority(&self, acting_player_id: Id) -> Result<(), PlayerActionError> {
         match self.priority_player {
             Some(priority_id) => {
-                if acting_player_id != priority_id {
-                    return Err(PlayerActionError::NotAllowed);
+                if acting_player_id == priority_id {
+                    Ok(())
+                } else {
+                    Err(PlayerActionError::NotAllowed)
                 }
             },
-            None => return Err(PlayerActionError::NotAllowed),
+            None => Err(PlayerActionError::NotAllowed),
+        }
+    }
+
+    /// Process the given player action.
+    pub fn do_player_action(&mut self, acting_player_id: Id, action: &PlayerAction) -> Result<(), PlayerActionError> {
+        // Players can only take an action if the game can accept one!
+        match self.current_status {
+            GameStatus::NeedsPlayerAction => {},
+            _ => return Err(PlayerActionError::NotAllowed),
         }
 
         // We'll break the actual action handling into a private routine
         // eventually
         match *action {
+            PlayerAction::Concede => {
+                self.current_status = GameStatus::Ended;
+
+                Ok(())
+            },
             PlayerAction::PassPriority => {
+                self.check_priority(acting_player_id)?;
+
                 let current_priority_index = self.player_turn_order
                     .iter()
                     .position(|&id| id == acting_player_id)
@@ -177,6 +195,8 @@ impl Game {
                 // TODO: Players can only play lands when it's their turn
                 // TODO: Players can only play lands during a main phase
                 // TODO: Players can only play lands when the stack is empty
+
+                self.check_priority(acting_player_id)?;
 
                 let player_hand_id = self
                     .find_zone_id(|zone| {
