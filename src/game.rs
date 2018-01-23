@@ -205,6 +205,7 @@ impl Game {
                 // TODO: Players can only play lands when it's their turn
                 // TODO: Players can only play lands during a main phase
                 // TODO: Players can only play lands when the stack is empty
+                // TODO: Players can only play one land per turn
 
                 self.check_priority(acting_player_id)?;
 
