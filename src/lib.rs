@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate lazy_static;
 
-mod entity;
+mod object;
 mod id;
 mod game;
 mod player;
 mod timestamp;
 mod zone;
 
-pub use entity::*;
+pub use object::*;
 pub use id::*;
 pub use game::*;
 pub use player::*;

@@ -16,7 +16,7 @@ pub struct Zone {
     pub details: ZoneDetails,
 
     // TODO: Zone order -- should that be handled in ZoneDetails or in a field
-    // of Entity?
+    // of Object?
 }
 
 impl Zone {

@@ -11,7 +11,7 @@ use zone::{Zone, ZoneDetails};
 pub fn new_two_player_game() -> Game {
     let mut game = Game {
         zones: HashMap::new(),
-        entities: HashMap::new(),
+        objects: HashMap::new(),
         mana_pools: HashMap::new(),
         players: HashMap::new(),
         player_turn_order: Vec::new(),

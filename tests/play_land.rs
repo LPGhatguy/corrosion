@@ -3,8 +3,8 @@ extern crate corrosion;
 use std::collections::HashMap;
 
 use corrosion::{
-    Entity,
-    EntityDetails,
+    Object,
+    ObjectDetails,
     Game,
     Id,
     PlayerAction,
@@ -23,18 +23,18 @@ fn setup() -> (Game, Id) {
     let hand_id = get_hand_id(&game, player1_id);
 
     let forest_id = get_id();
-    let forest = Entity {
+    let forest = Object {
         id: forest_id,
         zone: hand_id,
         timestamp: get_timestamp(),
-        details: EntityDetails::Forest {
+        details: ObjectDetails::Forest {
             tapped: false,
         },
         abilities: HashMap::new(),
     };
-    game.entities.insert(forest_id, forest);
+    game.objects.insert(forest_id, forest);
 
-    assert_eq!(game.entities.len(), 1);
+    assert_eq!(game.objects.len(), 1);
 
     (game, forest_id)
 }
@@ -47,14 +47,14 @@ fn test_success() {
     let battlefield_id = get_battlefield_id(&game);
 
     game.do_player_action(player1_id, &PlayerAction::PlayLand {
-        entity_id: forest_id,
+        object_id: forest_id,
     }).unwrap();
 
-    // Entities change identity when they change zones
-    assert!(game.entities.get(&forest_id).is_none());
-    assert_eq!(game.entities.len(), 1);
+    // Objects change idobject when they change zones
+    assert!(game.objects.get(&forest_id).is_none());
+    assert_eq!(game.objects.len(), 1);
 
-    let new_forest = game.entities.values().next().unwrap();
+    let new_forest = game.objects.values().next().unwrap();
 
     assert_eq!(new_forest.zone, battlefield_id);
 }
@@ -66,12 +66,12 @@ fn test_fail_wrong_player() {
     let player2_id = game.player_turn_order[1];
 
     let result = game.do_player_action(player2_id, &PlayerAction::PlayLand {
-        entity_id: forest_id,
+        object_id: forest_id,
     });
 
     assert!(result.is_err());
 
-    // The entity didn't move!
-    assert!(game.entities.get(&forest_id).is_some());
-    assert_eq!(game.entities.len(), 1);
+    // The object didn't move!
+    assert!(game.objects.get(&forest_id).is_some());
+    assert_eq!(game.objects.len(), 1);
 }

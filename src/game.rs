@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use entity::{Ability, Entity, EntityDetails};
+use object::{Ability, Object, ObjectDetails};
 use id::{Id, get_id};
 use player::Player;
 use timestamp::get_timestamp;
@@ -43,10 +43,10 @@ pub enum PlayerAction {
     Concede,
     PassPriority,
     PlayLand {
-        entity_id: Id,
+        object_id: Id,
     },
     ActivateAbility {
-        entity_id: Id,
+        object_id: Id,
         ability_id: Id,
     },
 
@@ -85,9 +85,9 @@ pub struct Game {
     pub zones: HashMap<Id, Zone>,
     pub players: HashMap<Id, Player>,
 
-    /// The base definition of each entity in the game, before being modified by
+    /// The base definition of each object in the game, before being modified by
     /// the currently active effects.
-    pub entities: HashMap<Id, Entity>,
+    pub objects: HashMap<Id, Object>,
 
     /// A simple representation of mana pools: the amount of green mana each
     /// player has. This will need to be expanded!
@@ -114,9 +114,9 @@ pub struct Game {
     /// The current game status, defining the core interaction loop.
     pub current_status: GameStatus,
 
-    // TODO: A reference to an entity descriptor pool, like what cards are legal
+    // TODO: A reference to an object descriptor pool, like what cards are legal
     //       in this format.
-    // TODO: The stack, a Vec<Entity>?
+    // TODO: The stack, a Vec<Object>?
     // TODO: A log of player actions
     // TODO: A list of currently active effects and their durations
 }
@@ -201,7 +201,7 @@ impl Game {
 
                 Ok(())
             },
-            PlayerAction::PlayLand { entity_id } => {
+            PlayerAction::PlayLand { object_id } => {
                 // TODO: Players can only play lands when it's their turn
                 // TODO: Players can only play lands during a main phase
                 // TODO: Players can only play lands when the stack is empty
@@ -227,56 +227,56 @@ impl Game {
                     .expect("Unable to locate battlefield!");
 
                 // We need to make sure we have a land to play!
-                match self.entities.get(&entity_id) {
-                    Some(entity) => {
+                match self.objects.get(&object_id) {
+                    Some(object) => {
                         // Make sure it's in our player's hand
-                        if entity.zone != player_hand_id {
+                        if object.zone != player_hand_id {
                             return Err(PlayerActionError::NotAllowed("Land not in player's hand"));
                         }
 
                         // Make sure it's a land
-                        match entity.details {
-                            EntityDetails::Forest { .. } => {},
-                            // TODO: Other entity details, when they're introduced
+                        match object.details {
+                            ObjectDetails::Forest { .. } => {},
+                            // TODO: Other object details, when they're introduced
                         }
                     }
-                    None => return Err(PlayerActionError::NotAllowed("Entity not found")),
+                    None => return Err(PlayerActionError::NotAllowed("Object not found")),
                 }
 
                 // We just checked to make sure this existed above!
-                let entity = self.entities.remove(&entity_id).unwrap();
+                let object = self.objects.remove(&object_id).unwrap();
 
-                // For now, let's just generate a new entity and put it on the
+                // For now, let's just generate a new object and put it on the
                 // battlefield.
-                let new_entity = Entity {
+                let new_object = Object {
                     id: get_id(),
                     zone: battlefield_id,
                     timestamp: get_timestamp(),
-                    details: entity.details,
-                    abilities: entity.abilities,
+                    details: object.details,
+                    abilities: object.abilities,
                 };
 
                 // TODO: Use GameMutation instead?
-                self.entities.insert(new_entity.id, new_entity);
+                self.objects.insert(new_object.id, new_object);
 
                 Ok(())
             },
-            PlayerAction::ActivateAbility { entity_id, ability_id } => {
+            PlayerAction::ActivateAbility { object_id, ability_id } => {
                 // TODO: This function is definitely temporary, like the rest of
                 //       the ability system.
 
                 self.check_priority(acting_player_id)?;
 
-                let mut entity = match self.entities.get_mut(&entity_id) {
-                    Some(entity) => entity,
-                    None => return Err(PlayerActionError::NotAllowed("Entity not found")),
+                let mut object = match self.objects.get_mut(&object_id) {
+                    Some(object) => object,
+                    None => return Err(PlayerActionError::NotAllowed("Object not found")),
                 };
 
-                // TODO: Make sure the acting player controls this entity!
+                // TODO: Make sure the acting player controls this object!
 
-                let ability = match entity.abilities.get(&ability_id) {
+                let ability = match object.abilities.get(&ability_id) {
                     Some(ability) => ability,
-                    None => return Err(PlayerActionError::NotAllowed("Ability not found on entity")),
+                    None => return Err(PlayerActionError::NotAllowed("Ability not found on object")),
                 };
 
                 //  such green
@@ -286,23 +286,23 @@ impl Game {
                     Ability::AddGreen => {
                         // Make sure we're on the battlefield! Abilities will
                         // have to specify when they are valid to activate.
-                        match self.zones.get(&entity.zone) {
+                        match self.zones.get(&object.zone) {
                             Some(zone) => match zone.details {
                                 ZoneDetails::Battlefield => {},
-                                _ => return Err(PlayerActionError::NotAllowed("Entity not on battlefield")),
+                                _ => return Err(PlayerActionError::NotAllowed("Object not on battlefield")),
                             },
-                            None => return Err(PlayerActionError::NotAllowed("Could not find entity's zone by ID")),
+                            None => return Err(PlayerActionError::NotAllowed("Could not find object's zone by ID")),
                         }
 
                         // Make sure our land is untapped
-                        match entity.details {
-                            EntityDetails::Forest { tapped } => {
+                        match object.details {
+                            ObjectDetails::Forest { tapped } => {
                                 if tapped {
-                                    return Err(PlayerActionError::NotAllowed("Entity already tapped"));
+                                    return Err(PlayerActionError::NotAllowed("Object already tapped"));
                                 }
 
                                 // Tap the land!
-                                entity.details = EntityDetails::Forest {
+                                object.details = ObjectDetails::Forest {
                                     tapped: true
                                 };
                             }
@@ -343,7 +343,7 @@ impl Game {
     /// also cheap, since the most naive way to implement client communication
     /// would be to send a full state on every change!
     pub fn view_as_player(&self, _player_id: Id) -> Game {
-        // TODO: Hide entities that player has no knowledge of, like face-down
+        // TODO: Hide objects that player has no knowledge of, like face-down
         //       permanents.
 
         // TODO: Hide zones that player has no knowledge of, like libraries, and
@@ -352,11 +352,11 @@ impl Game {
         self.clone()
     }
 
-    /// Queries an entity in the game by ID.
+    /// Queries an object in the game by ID.
     ///
-    /// Entity representation may be unintuitive -- the `Entity` objects stored
+    /// Object representation may be unintuitive -- the `Object` objects stored
     /// in the `Game` only contain their base state. When querying an
-    /// entity's current state, we need to traverse a list of effects currently
+    /// object's current state, we need to traverse a list of effects currently
     /// modifying that object in layer order.
     ///
     /// As an example, consider a Mountain enchanted by Spreading Seas:
@@ -371,17 +371,17 @@ impl Game {
     /// The mountain's current state (post-effect) thus says that it has type
     /// `Basic Land - Island` and taps for blue mana only!
     ///
-    /// If we wanted to return the Mountain entity directly, we'd either have to
+    /// If we wanted to return the Mountain object directly, we'd either have to
     /// modify the data whenever an effect enters/leaves the battlefield or just
     /// keep a list of active effects and calculate them on each observation.
     ///
     /// While the former technique is possible, I think that calculating effects
     /// on each individual observation event is simpler.
-    pub fn view_entity(&self, entity_id: Id) -> Option<Entity> {
-        let base_entity = self.entities.get(&entity_id)?;
+    pub fn view_object(&self, object_id: Id) -> Option<Object> {
+        let base_object = self.objects.get(&object_id)?;
 
-        // TODO: Enumerate the set of effects that could affect this entity.
+        // TODO: Enumerate the set of effects that could affect this object.
 
-        Some(base_entity.clone())
+        Some(base_object.clone())
     }
 }

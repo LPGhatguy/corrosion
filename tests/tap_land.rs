@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use corrosion::{
     Ability,
-    Entity,
-    EntityDetails,
+    Object,
+    ObjectDetails,
     PlayerAction,
 
     get_id,
@@ -30,32 +30,32 @@ fn test_success() {
 
     let forest_id = get_id();
     {
-        let forest = Entity {
+        let forest = Object {
             id: forest_id,
             zone: battlefield_id,
             timestamp: get_timestamp(),
-            details: EntityDetails::Forest {
+            details: ObjectDetails::Forest {
                 tapped: false,
             },
             abilities: forest_abilities,
         };
-        game.entities.insert(forest_id, forest);
+        game.objects.insert(forest_id, forest);
     }
 
-    assert_eq!(game.entities.len(), 1);
+    assert_eq!(game.objects.len(), 1);
 
     let player1_id = game.player_turn_order[0];
 
     game.do_player_action(player1_id, &PlayerAction::ActivateAbility {
-        entity_id: forest_id,
+        object_id: forest_id,
         ability_id: forest_ability_id,
     }).unwrap();
 
     // Did the land tap?
-    let forest = game.entities.get(&forest_id).unwrap();
+    let forest = game.objects.get(&forest_id).unwrap();
 
     match forest.details {
-        EntityDetails::Forest { tapped } => assert!(tapped),
+        ObjectDetails::Forest { tapped } => assert!(tapped),
     }
 
     // Did we get that mana we paid for?

@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-/// A monotonically-increasing value used to compare when entities entered
+/// A monotonically-increasing value used to compare when objects entered
 /// their current zone.
 pub type Timestamp = usize;
 
