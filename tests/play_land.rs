@@ -27,7 +27,9 @@ fn setup() -> (Game, Id) {
         id: forest_id,
         zone: hand_id,
         timestamp: get_timestamp(),
-        details: EntityDetails::Forest,
+        details: EntityDetails::Forest {
+            tapped: false,
+        },
         abilities: HashMap::new(),
     };
     game.entities.insert(forest_id, forest);

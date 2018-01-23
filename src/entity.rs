@@ -9,7 +9,10 @@ use timestamp::Timestamp;
 /// tinker with other pieces of the codebase.
 #[derive(Debug, Clone)]
 pub enum EntityDetails {
-    Forest,
+    Forest {
+        // This isn't relevant outside the battlefield
+        tapped: bool,
+    },
 }
 
 /// A super simplified view of abilities; this will need to be separated into

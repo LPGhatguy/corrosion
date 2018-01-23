@@ -62,7 +62,7 @@ pub enum PlayerActionError {
     /// Denotes anything that a player isn't allowed to do.
     ///
     /// TODO: Break this into more variants as needed
-    NotAllowed,
+    NotAllowed(&'static str),
 }
 
 /// Will be used to define mutations to the game state. Mutations are defined as
@@ -130,10 +130,10 @@ impl Game {
                 if acting_player_id == priority_id {
                     Ok(())
                 } else {
-                    Err(PlayerActionError::NotAllowed)
+                    Err(PlayerActionError::NotAllowed("Player does not have priority"))
                 }
             },
-            None => Err(PlayerActionError::NotAllowed),
+            None => Err(PlayerActionError::NotAllowed("No player has priority")),
         }
     }
 
@@ -142,7 +142,7 @@ impl Game {
         // Players can only take an action if the game can accept one!
         match self.current_status {
             GameStatus::NeedsPlayerAction => {},
-            _ => return Err(PlayerActionError::NotAllowed),
+            _ => return Err(PlayerActionError::NotAllowed("Game unable to accept actions at this time")),
         }
 
         // We'll break the actual action handling into a private routine
@@ -231,16 +231,16 @@ impl Game {
                     Some(entity) => {
                         // Make sure it's in our player's hand
                         if entity.zone != player_hand_id {
-                            return Err(PlayerActionError::NotAllowed);
+                            return Err(PlayerActionError::NotAllowed("Land not in player's hand"));
                         }
 
                         // Make sure it's a land
                         match entity.details {
-                            EntityDetails::Forest => {},
+                            EntityDetails::Forest { .. } => {},
                             // TODO: Other entity details, when they're introduced
                         }
                     }
-                    None => return Err(PlayerActionError::NotAllowed),
+                    None => return Err(PlayerActionError::NotAllowed("Entity not found")),
                 }
 
                 // We just checked to make sure this existed above!
@@ -267,16 +267,16 @@ impl Game {
 
                 self.check_priority(acting_player_id)?;
 
-                let entity = match self.entities.get(&entity_id) {
+                let mut entity = match self.entities.get_mut(&entity_id) {
                     Some(entity) => entity,
-                    None => return Err(PlayerActionError::NotAllowed),
+                    None => return Err(PlayerActionError::NotAllowed("Entity not found")),
                 };
 
                 // TODO: Make sure the acting player controls this entity!
 
                 let ability = match entity.abilities.get(&ability_id) {
                     Some(ability) => ability,
-                    None => return Err(PlayerActionError::NotAllowed),
+                    None => return Err(PlayerActionError::NotAllowed("Ability not found on entity")),
                 };
 
                 // TODO: Make sure we can pay this cost, perhaps prompt player!
@@ -288,6 +288,32 @@ impl Game {
                     Ability::AddGreen => {
                         // TODO: Tap this land as a cost
 
+                        // Make sure we're on the battlefield! Abilities will
+                        // have to specify when they are valid to activate.
+                        match self.zones.get(&entity.zone) {
+                            Some(zone) => match zone.details {
+                                ZoneDetails::Battlefield => {},
+                                _ => return Err(PlayerActionError::NotAllowed("Entity not on battlefield")),
+                            },
+                            None => return Err(PlayerActionError::NotAllowed("Could not find entity's zone by ID")),
+                        }
+
+                        // Make sure our land is untapped
+                        match entity.details {
+                            EntityDetails::Forest { tapped } => {
+                                if tapped {
+                                    return Err(PlayerActionError::NotAllowed("Entity already tapped"));
+                                }
+
+                                // Tap the land!
+                                entity.details = EntityDetails::Forest {
+                                    tapped: true
+                                };
+                            }
+                        }
+
+                        // Find our mana pool and increment it
+                        // Eventually, mana will be more complex than a usize
                         let mana_value = *self.mana_pools.get(&acting_player_id)
                             .expect("Player was missing their mana pool!");
 
