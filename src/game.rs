@@ -91,6 +91,7 @@ pub struct Game {
 
     /// A simple representation of mana pools: the amount of green mana each
     /// player has. This will need to be expanded!
+    // TODO: Move mana pools into player object?
     pub mana_pools: HashMap<Id, usize>,
 
     /// The order that players have their turns in.

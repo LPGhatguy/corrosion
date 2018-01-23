@@ -56,6 +56,10 @@ pub struct Object {
     /// All of the abilities that this object has available to activate
     pub abilities: HashMap<Id, Ability>,
 
+    // TODO: Types
+    // TODO: Supertypes
+    // TODO: Subtypes
     // TODO: Owner, a player ID
     // TODO: Controller, a player ID
+    // TODO: Counters of various types
 }

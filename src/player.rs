@@ -4,4 +4,8 @@ use id::Id;
 #[derive(Debug, Clone)]
 pub struct Player {
     pub id: Id,
+
+    // TODO: Reference to some descriptor containing name?
+    // TODO: Life total
+    // TODO: Counters, like energy and poison
 }
