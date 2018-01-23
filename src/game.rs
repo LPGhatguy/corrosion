@@ -279,15 +279,11 @@ impl Game {
                     None => return Err(PlayerActionError::NotAllowed("Ability not found on entity")),
                 };
 
-                // TODO: Make sure we can pay this cost, perhaps prompt player!
-
                 //  such green
                 //       so forest
                 //    wow
                 match *ability {
                     Ability::AddGreen => {
-                        // TODO: Tap this land as a cost
-
                         // Make sure we're on the battlefield! Abilities will
                         // have to specify when they are valid to activate.
                         match self.zones.get(&entity.zone) {
